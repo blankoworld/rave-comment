@@ -7,6 +7,7 @@ from os.path import exists
 from os import mkdir
 import sys
 import socket
+import re
 
 current_dir = dirname(realpath(__file__))
 conf_default = current_dir + '/../conf/isso.conf'
@@ -35,6 +36,24 @@ def check_port(name):
         return False
     return True
 
+def check_url(url):
+    """
+    Check that URL is well formed.
+    Regex found in Django regex url validator.
+    """
+    # Check that URL is well formed
+    regex = re.compile(
+        r'^(?:http)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    if not regex.match(url):
+        print("URL malformed")
+        return False
+    return True
+
 def search_port():
     """
     Give a free port on the system.
@@ -47,7 +66,7 @@ def search_port():
 #    s.close() # Close socket to prevent problem linked to its use
     return res
 
-def create_home(name, email):
+def create_home(name, email, url):
     """
     Create the home directory with given name.
     Copy default configuration into by changing some elements.
@@ -77,16 +96,22 @@ def main():
     """
     # Check command line
     args = sys.argv
-    if len(args) != 3:
-        raise Exception("Need only 2 arguments: pseudo email")
+    if len(args) != 4:
+        raise Exception("Need only 3 arguments: pseudo email website")
         return 1
     # Check pseudo
     pseudo = args[1]
     if not check_pseudo(pseudo):
         raise Exception("Pseudo not valid")
         return 1
-    # Check email
+    # Fetch remaining args
     email = args[2]
+    website = args[3]
+    # Check website URL
+    if not check_url(website):
+        raise Exception("Website URL not valid")
+        return 1
+    # Search an available port
     port = search_port()
     if not port:
         raise Exception("No port found")
@@ -101,7 +126,7 @@ def main():
     print("###########################")
 
     # Create the user home directory in which comments and configuration will be.
-    create_home(pseudo, email)
+    create_home(pseudo, email, website)
 
     # TODO: Create the docker container with right parameters
     # TODO: Create the nginx configuration
