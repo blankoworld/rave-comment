@@ -9,6 +9,9 @@ import sys
 import socket
 import re
 
+docker_image_name = 'isso:latest'
+docker_image_port = '8080'
+docker_name_prefix = 'rave_'
 current_dir = dirname(realpath(__file__))
 conf_default = current_dir + '/../conf/isso.conf'
 conf_default_name = 'isso.conf'
@@ -82,8 +85,10 @@ def create_home(name, email, url):
     with open(conf_default, 'r') as f:
         origin = f.readlines()
         f.close()
+    # Prepare user configuration file
+    config = home + '/' + conf_default_name
     # Do some changes on it by writing new file
-    destination = open(home + '/' + conf_default_name, 'w')
+    destination = open(config, 'w')
     host_found = 0
     for line in origin:
         if line.startswith('host ='):
@@ -97,7 +102,26 @@ def create_home(name, email, url):
             line = 'to = ' + email + '\n'
         destination.write(line)
     destination.close()
-    return True
+    return home, config
+
+def create_docker(port, volume_path, pseudo):
+    """
+    Create a docker container and mount volume_path as main path for Isso default directory
+    """
+    from subprocess import Popen, PIPE
+    name = docker_name_prefix + pseudo
+    ports = '%s:%s' % (port, docker_image_port)
+    volumes = '%s:%s' % (volume_path, '/opt/isso')
+    generation = Popen(['docker', 'run', '-d', '-p', ports, '--name', name, '-v', volumes, docker_image_name], stdout=PIPE, stderr=PIPE)
+    # Launch clean up then generation
+    stdout = ()
+    try:
+        stdout = generation.communicate()
+    except Exception as e:
+        return False, e
+    if stdout and len(stdout) > 1 and stdout[1]:
+        return False, stdout[1]
+    return True, ''
 
 def main():
     """
@@ -128,18 +152,22 @@ def main():
         raise Exception("Port not valid")
         return 1
     port = int(port)
+
     # TODO: Check WEBSITE URL
-    print("###########################")
-    print("Port: %s" % port)
-    print("###########################")
 
     # Create the user home directory in which comments and configuration will be.
-    create_home(pseudo, email, website)
+    home, config = create_home(pseudo, email, website)
 
-    # TODO: Create the docker container with right parameters
+    # Create the docker container with right parameters
+    docker, msg = create_docker(port, home, pseudo)
+    if not docker:
+        raise Exception("Docker problem: %s" % msg)
     # TODO: Create the nginx configuration
     # TODO: Reload nginx
     # TODO: Check with wget or Mechanize that the result is OK
+
+    # Display result
+    print("INFO:%s;%s" % (pseudo, port))
 
     return 0
 
