@@ -82,14 +82,22 @@ def create_home(name, email, url):
     with open(conf_default, 'r') as f:
         origin = f.readlines()
         f.close()
-    # TODO: Do some changes on it
-    # - create regex
-    # - parse lines
-    # - change line if regex found
-    # FIXME: do code here
+    # Do some changes on it by writing new file
+    destination = open(home + '/' + conf_default_name, 'w')
+    host_found = 0
     for line in origin:
-        print line
-    # TODO: Parse line, do change and write them into the resulted file
+        if line.startswith('host ='):
+            if not host_found or host_found < 1:
+                line = 'host = ' + url + '\n'
+                host_found += 1
+            # TODO: Read a specific rave configuration file to find change to do into the isso cfg file
+            elif host_found == 1:
+                pass # Change host by those from the Rave server
+        elif line.startswith('to ='):
+            line = 'to = ' + email + '\n'
+        destination.write(line)
+    destination.close()
+    return True
 
 def main():
     """
