@@ -8,6 +8,7 @@ from os import mkdir
 import sys
 import socket
 import re
+from subprocess import Popen, PIPE
 
 docker_image_name = 'isso:latest'
 docker_image_port = '8080'
@@ -114,7 +115,6 @@ def create_docker(port, volume_path, pseudo):
     """
     Create a docker container and mount volume_path as main path for Isso default directory
     """
-    from subprocess import Popen, PIPE
     name = docker_name_prefix + pseudo
     ports = '%s:%s' % (port, docker_image_port)
     volumes = '%s:%s' % (volume_path, '/opt/isso')
@@ -152,6 +152,21 @@ def create_webserver_conf(pseudo, port):
     newfile.write(res)
     newfile.close()
     return True
+
+def reload_webserver():
+    """
+    Reload the Web server (nginx).
+    """
+    reload = Popen(['service', 'nginx', 'reload'], stdout=PIPE, stderr=PIPE)
+    # Launch clean up then generation
+    stdout = ()
+    try:
+        stdout = reload.communicate()
+    except Exception as e:
+        return False, e
+    if stdout and len(stdout) > 1 and stdout[1]:
+        return False, stdout[1]
+    return True, ''
 
 def main():
     """
@@ -193,12 +208,14 @@ def main():
     if not docker:
         raise Exception("Docker problem: %s" % msg)
 
-    # Create the nginx configuration
+    # Create the webserver configuration
     webserver_conf_creation = create_webserver_conf(pseudo, port)
     if not webserver_conf_creation:
         raise Exception('Web server configuration failed!')
 
-    # TODO: Reload nginx
+    # Reload webserver
+    reload_webserver()
+
     # TODO: Check with wget or Mechanize that the result is OK
 
     # Display result
