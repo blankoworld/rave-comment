@@ -1,3 +1,8 @@
 # Script
 
   * Add a CONF file in which some variable remains. Add a method that read this configuration file
+  * Send an email or make a log of this script so that the administrator can see which user configuration failed and how to proceed to fix it.
+
+# Miscellaneous
+
+Create a script that can test that the server is done for some user and that it didn't work!
