@@ -15,12 +15,18 @@ docker_name_prefix = 'rave_'
 current_dir = dirname(realpath(__file__))
 conf_default = current_dir + '/../conf/isso.conf'
 conf_default_name = 'isso.conf'
+conf_webserver = current_dir + '../conf/nginx.conf'
+webserver_path = '/etc/nginx/rave'
 
 def check_pseudo(name):
     """
     Check that pseudo is a string.
+    Also check that pseudo is not a reserved pseudo.
     """
     if not isinstance(name, str):
+        return False
+    if name in ['proxy_add_x_forwarded_for', 'host', 'scheme']:
+        print("Pseudo not allowed!")
         return False
     return True
 
@@ -123,6 +129,30 @@ def create_docker(port, volume_path, pseudo):
         return False, stdout[1]
     return True, ''
 
+def create_webserver_conf(pseudo, port):
+    """
+    Create a new Web Server configuration file for the new user.
+    First read the default web server file.
+    Then replace values.
+    Finally 
+    """
+    res = False
+    with open(conf_webserver, 'r') as conf:
+        t = string.Template(conf.read())
+        res = t.safe_substitute({
+            'pseudo': pseudo,
+            'port': port,
+        })
+    conf.close()
+    if not res:
+        raise Exception('Error during webserver file conversion')
+        return False
+    newfile_path = webserver_path + '/' + pseudo + '.conf'
+    newfile = open(newfile_path, 'w')
+    newfile.write(res)
+    newfile.close()
+    return True
+
 def main():
     """
     """
@@ -162,7 +192,12 @@ def main():
     docker, msg = create_docker(port, home, pseudo)
     if not docker:
         raise Exception("Docker problem: %s" % msg)
-    # TODO: Create the nginx configuration
+
+    # Create the nginx configuration
+    webserver_conf_creation = create_webserver_conf(pseudo, port)
+    if not webserver_conf_creation:
+        raise Exception('Web server configuration failed!')
+
     # TODO: Reload nginx
     # TODO: Check with wget or Mechanize that the result is OK
 
