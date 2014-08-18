@@ -9,6 +9,7 @@ import sys
 import socket
 import re
 from subprocess import Popen, PIPE
+import string
 
 docker_image_name = 'isso:latest'
 docker_image_port = '8080'
@@ -16,7 +17,7 @@ docker_name_prefix = 'rave_'
 current_dir = dirname(realpath(__file__))
 conf_default = current_dir + '/../conf/isso.conf'
 conf_default_name = 'isso.conf'
-conf_webserver = current_dir + '../conf/nginx.conf'
+conf_webserver = current_dir + '/../conf/nginx.conf'
 webserver_path = '/etc/nginx/rave'
 
 def check_pseudo(name):
