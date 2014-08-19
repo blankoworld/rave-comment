@@ -158,7 +158,7 @@ def reload_webserver():
     """
     Reload the Web server (nginx).
     """
-    reload = Popen(['service', 'nginx', 'reload'], stdout=PIPE, stderr=PIPE)
+    reload = Popen(['sudo', 'nginx', '-s', 'reload'], stdout=PIPE, stderr=PIPE)
     # Launch clean up then generation
     stdout = ()
     try:

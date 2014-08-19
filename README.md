@@ -20,6 +20,18 @@ For now, here is what is planned to make Rave being a reality:
   * Compiling new image of Rave Dockerfile
   * Launching Rave and test it
 
+NB:
+
+  * Add user in docker group so that it can create dockers
+  * Add chmod 755 on /etc/nginx/rave
+  * Edit sudoers with ```sudo visudo``` and add these line:
+
+```
+username ALL=NOPASSWD: /usr/sbin/nginx
+```
+
+Be sure to adapt by changing *username* by the username that will launch the script.
+
 ## TODO
 
 Talk about:
