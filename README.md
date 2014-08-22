@@ -13,24 +13,29 @@ For that, Rave use these tools:
 
 For now, here is what is planned to make Rave being a reality:
 
-  * Nginx installation and configuration
-  * Rave Django App installation and configuration
+  * Nginx installation
+  * Fetching Rave Comment
+  * Configuring it
+  * Nginx configuration
   * Docker installation
   * Fetching Rave Dockerfile
   * Compiling new image of Rave Dockerfile
+  * Reloading Nginx configuration
   * Launching Rave and test it
 
-NB:
+### Docker Installation
 
-  * Add user in docker group so that it can create dockers
-  * Add chmod 755 on /etc/nginx/rave
-  * Edit sudoers with ```sudo visudo``` and add these line:
+First you need to install Docker. You can [read the official installation documentation](https://docs.docker.com/installation/) to install it regarding your GNU/Linux distribution or your server.
 
-```
-username ALL=NOPASSWD: /usr/sbin/nginx
-```
+Then, add the user that will launch the Django App to the docker group so that it can create docker (for an example with *www-data* user):
 
-Be sure to adapt by changing *username* by the username that will launch the script.
+    sudo gpasswd -a www-data docker
+
+Now, you can fetch the Isso Docker image:
+
+    docker pull bl4n/isso
+
+Enjoy, you have a docker image for Rave new users!
 
 ### Nginx Installation
 
@@ -90,6 +95,53 @@ root /srv/www/ravecomment/app;
 ```
 
 You just have to relaunch your Nginx and it will work.
+
+## Troubleshooting
+
+### DNS resolver problem
+
+You can have this problem on Ubuntu servers:
+
+```
+Exception: Docker problem: WARNING: Local (127.0.0.1) DNS resolver found in resolv.conf and containers can't use it. Using default external servers : [8.8.8.8 8.8.4.4]
+```
+
+To fix that, edit the **/etc/default/docker** file and uncomment this line:
+
+    DOCKER_OPTS="--dns 8.8.8.8 --dns 8.8.4.4"
+
+Then relaunch Docker:
+
+    sudo restart docker
+
+It will now permit to Docker to relaunch with right DNS parameters.
+
+### Cannot access locally to the docker file
+
+If this command return something, you will probably have a docker bridge:
+
+    ifconfig|grep docker
+
+If this is the case, I suggest you to get the IP of this interface.
+
+For an example, my interface seems to be called **docker0**, so I do:
+
+    ifconfig docker0| head -n2
+
+It returns me:
+
+```
+docker0   Link encap:Ethernet  HWaddr 00:00:00:00:00:00
+          inet addr:172.42.42.1  Bcast:0.0.0.0  Mask:255.255.0.0
+```
+
+So you should adapt **conf/nginx.conf** file with this address, like this:
+
+    proxy_pass http://172.17.42.1:$port;
+
+And relaunch the Django App (nginx).
+
+Pay attention that if you already have some nginx configuration with Docker containers that are running, you should adapt all configuration files in /etc/nginx/rave/ directory.
 
 ## TODO
 
