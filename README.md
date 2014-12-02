@@ -108,7 +108,7 @@ Exception: Docker problem: WARNING: Local (127.0.0.1) DNS resolver found in reso
 
 To fix that, edit the **/etc/default/docker** file and uncomment this line:
 
-    DOCKER_OPTS="--dns 8.8.8.8 --dns 8.8.4.4"
+    DOCKER_OPTS="--dns 8.8.8.8"
 
 Then relaunch Docker:
 
